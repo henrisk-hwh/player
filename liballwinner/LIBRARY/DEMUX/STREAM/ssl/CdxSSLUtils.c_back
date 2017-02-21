@@ -1,0 +1,242 @@
+#include "CdxSSLUtils.h"
+#if 0
+static cdx_int32 __mbed_tls_ssl_create(void * ctx/*ctx*/)
+{
+	CdxSSLUtilsT *ssl_utils_ctx =  (CdxSSLUtilsT*)ctx;
+
+
+
+	return -1;
+}
+
+static cdx_int32 __mbed_tls_ssl_handshake(void * ctx/*ctx*/)
+{
+	CdxSSLUtilsT *ssl_ctx =  (CdxSSLUtilsT*)ctx;
+}
+
+static cdx_int32 __mbed_tls_ssl_read(void * ctx/*ctx*/, void * buf/*buf*/, cdx_uint32 len/*len*/)
+{
+	CdxSSLUtilsT *ssl_ctx =  (CdxSSLUtilsT*)ctx;
+}
+
+static cdx_int32 __mbed_tls_ssl_write(void * ctx/*ctx*/, void * buf/*buf*/, cdx_uint32 len/*len*/)
+{
+	CdxSSLUtilsT *ssl_ctx =  (CdxSSLUtilsT*)ctx;
+}
+
+static cdx_int32 __mbed_tls_ssl_close(void * ctx/*ctx*/)
+{
+	CdxSSLUtilsT *ssl_ctx =  (CdxSSLUtilsT*)ctx;
+}
+
+static cdx_int32 __mbed_tls_ssl_free(void * ctx)
+{
+	CdxSSLUtilsT *ssl_ctx =  (CdxSSLUtilsT*)ctx;
+}
+
+static cdx_int32 __mbed_tls_ssl_connect(void * ctx/*ctx*/, cdx_int32 sockfd, const char *hostname, const char *port,
+                        cdx_long timeoutUs, cdx_int32 *pForceStop)
+{
+	CdxSSLUtilsT *ssl_ctx =  (CdxSSLUtilsT*)ctx;
+
+    int len;
+    cdx_int32 ret;
+    uint32_t flags;
+    unsigned char buf[1024];
+    const char *pers = "ssl_client1";
+
+
+    mbedtls_ssl_context *ssl_ctx = &ssl_utils_ctx->mbedtls_ssl_ctx;
+    mbedtls_net_context *net_ctx = &ssl_utils_ctx->mbedtls_net_ctx;
+
+
+	mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_ssl_config conf;
+    mbedtls_x509_crt cacert;
+
+
+    mbedtls_net_init( net_ctx );
+    mbedtls_ssl_init( ssl_ctx );
+    mbedtls_ssl_config_init( &conf );
+    mbedtls_x509_crt_init( &cacert );
+    mbedtls_ctr_drbg_init( &ctr_drbg );
+
+
+    mbedtls_printf( "\n  . Seeding the random number generator..." );
+
+
+    mbedtls_entropy_init( &entropy );
+    if( ( ret = mbedtls_ctr_drbg_seed( &ctr_drbg, mbedtls_entropy_func, &entropy,
+                               (const unsigned char *) pers,
+                               strlen( pers ) ) ) != 0 )
+    {
+        mbedtls_printf( " failed\n  ! mbedtls_ctr_drbg_seed returned %d\n", ret );
+        //goto exit;
+    }
+
+    mbedtls_printf( " ok\n" );
+
+    /*
+     * 0. Initialize certificates
+     */
+    mbedtls_printf( "  . Loading the CA root certificate ..." );
+
+/*
+    ret = mbedtls_x509_crt_parse( &cacert, (const unsigned char *) mbedtls_test_cas_pem,
+                          mbedtls_test_cas_pem_len );
+    if( ret < 0 )
+    {
+        mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret );
+        //goto exit;
+    }
+*/
+
+    mbedtls_printf( " ok (%d skipped)\n", ret );
+    mbedtls_printf( "  . Connecting to tcp/%s/%s...", hostname, port );
+	if( ( ret = mbedtls_net_connect( net_ctx, hostname, port, MBEDTLS_NET_PROTO_TCP ) ) != 0 )
+    {   
+        CDX_LOGE( " failed\n  ! mbedtls_net_connect returned %d\n\n", ret );
+        //goto exit;
+    }       
+        
+    CDX_LOGE( " ok\n" );
+
+    /*
+     * 2. Setup stuff
+     */
+    CDX_LOGE( "  . Setting up the SSL/TLS structure..." );
+
+
+    if( ( ret = mbedtls_ssl_config_defaults( &conf,
+                    MBEDTLS_SSL_IS_CLIENT,
+                    MBEDTLS_SSL_TRANSPORT_STREAM,
+                    MBEDTLS_SSL_PRESET_DEFAULT ) ) != 0 )
+    {
+        CDX_LOGE( " failed\n  ! mbedtls_ssl_config_defaults returned %d\n\n", ret );
+        //goto exit;
+    }
+    CDX_LOGE( " ok\n" );
+    /* OPTIONAL is not optimal for security,
+     * but makes interop easier in this simplified example */
+    mbedtls_ssl_conf_authmode( &conf, MBEDTLS_SSL_VERIFY_OPTIONAL );
+    mbedtls_ssl_conf_ca_chain( &conf, &cacert, NULL );
+    mbedtls_ssl_conf_rng( &conf, mbedtls_ctr_drbg_random, &ctr_drbg );
+    mbedtls_ssl_conf_dbg( &conf, my_debug, stdout );
+
+    if( ( ret = mbedtls_ssl_setup( &ssl, &conf ) ) != 0 )
+    {
+        CDX_LOGE( " failed\n  ! mbedtls_ssl_setup returned %d\n\n", ret );
+        //goto exit;
+    }
+/*
+    if( ( ret = mbedtls_ssl_set_hostname( &ssl, "mbed TLS Server 1" ) ) != 0 )
+    {
+        CDX_LOGE( " failed\n  ! mbedtls_ssl_set_hostname returned %d\n\n", ret );
+        //goto exit;
+    }
+*/
+    mbedtls_ssl_set_bio( &ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, NULL );
+}
+
+static struct CdxSSLUtilsOpsS MbedtlsUtilsOps = {
+	.create     = __mbed_tls_ssl_create,
+	.connect    = __mbed_tls_ssl_connect,
+    .handshake  = __mbed_tls_ssl_handshake,
+    .read       = __mbed_tls_ssl_read,
+    .close      = __mbed_tls_ssl_close,
+    .free       = __mbed_tls_ssl_free
+};
+
+static struct CdxSSLUtilsOpsS OpensslUtilsOps = {
+	.create     = __mbed_tls_ssl_create,
+    .handshake    = __mbed_tls_ssl_handshake,
+    .read       = __mbed_tls_ssl_read,
+    .close      = __mbed_tls_ssl_close,
+    .free       = __mbed_tls_ssl_free
+};
+
+cdx_int32 CdxSSLUtilsCreate(CdxSSLUtilsT *ssl, SslTypeT type)
+{
+	if(type == _MBEDTLS){
+		ssl->ops = &MbedtlsUtilsOps;
+	}else{
+		ssl->ops = &OpensslUtilsOps;
+	}
+}
+
+cdx_int32 CdxSSLUtilsFree(CdxSSLUtilsT *ssl)
+{
+	ssl->ops = NULL;	
+}
+
+
+#endif
+#define _RETURN_IF_ERROR(x) \
+do { \
+	if(x < 0) return -1; \
+}while(0)
+
+void MbedTlsClientInit(MbedTLSSession_st *session, unsigned char *entropy, size_t entropyLen)
+{
+    mbedtls_net_init(&(session->mbedNetCtx));
+    mbedtls_ssl_init(&(session->mbedSslCtx));
+    mbedtls_ssl_config_init(&(session->mbedSslConf));
+    mbedtls_ctr_drbg_init(&(session->mbedDrbgCtx));
+    mbedtls_x509_crt_init(&(session->mbedX509Crt));
+
+    mbedtls_entropy_init(&(session->mbedEtpyCtx));
+    mbedtls_ctr_drbg_seed(&(session->mbedDrbgCtx), 
+                            mbedtls_entropy_func, 
+                            &(session->mbedEtpyCtx), 
+                            (unsigned char *)entropy, 
+                            entropyLen);
+}
+
+int AMCMbedTlsClientConnect(MbedTLSSession_st *session, const char *serverHost, int serverPort)
+{
+    int callStat;
+    char portStrBuff[16];
+    CDX_LOGE("mbedtls_net_connect begin");
+    snprintf(portStrBuff, sizeof(portStrBuff), "%d", serverPort);
+    callStat = mbedtls_net_connect(&(session->mbedNetCtx), 
+                                    serverHost, 
+                                    portStrBuff, 
+                                    MBEDTLS_NET_PROTO_TCP);
+    _RETURN_IF_ERROR(callStat);
+    CDX_LOGE("mbedtls_ssl_config_defaults begin");
+    callStat = mbedtls_ssl_config_defaults(&(session->mbedSslConf), 
+                                            MBEDTLS_SSL_IS_CLIENT, 
+                                            MBEDTLS_SSL_TRANSPORT_STREAM, 
+                                            MBEDTLS_SSL_PRESET_DEFAULT);
+    _RETURN_IF_ERROR(callStat);
+    CDX_LOGE("mbedtls_ssl_conf_authmode begin");
+    mbedtls_ssl_conf_authmode(&(session->mbedSslConf), MBEDTLS_SSL_VERIFY_OPTIONAL);
+    mbedtls_ssl_conf_ca_chain(&(session->mbedSslConf), &(session->mbedX509Crt), NULL);
+
+    mbedtls_ssl_conf_rng(&(session->mbedSslConf), 
+                            mbedtls_ctr_drbg_random, 
+                            &(session->mbedDrbgCtx));
+    //edtls_ssl_conf_dbg(&(session->mbedSslConf), NULL, NULL);
+    CDX_LOGE("mbedtls_ssl_set_bio begin");
+    mbedtls_ssl_set_bio(&(session->mbedSslCtx), 
+                        &(session->mbedNetCtx), 
+                        mbedtls_net_send, 
+                        mbedtls_net_recv, 
+                        mbedtls_net_recv_timeout);
+    CDX_LOGE("mbedtls_ssl_setup begin");
+    callStat = mbedtls_ssl_setup(&(session->mbedSslCtx), &(session->mbedSslConf));
+    _RETURN_IF_ERROR(callStat);
+    CDX_LOGE("mbedtls_ssl_handshake begin");
+    while((callStat = mbedtls_ssl_handshake(&(session->mbedSslCtx))) != 0)
+    {
+        if ((callStat != MBEDTLS_ERR_SSL_WANT_READ)
+            && (callStat != MBEDTLS_ERR_SSL_WANT_WRITE))
+        {
+            return callStat;
+        }
+        CDX_LOGE("mbedtls_ssl_handshake retry");
+    }
+    CDX_LOGE("mbedtls_ssl_handshake end");
+    return 0;
+}
