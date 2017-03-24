@@ -41,6 +41,7 @@ static const int AWPLAYER_MESSAGE_DEMUX_BUFFER_END          = 0x107;
 static const int AWPLAYER_MESSAGE_DEMUX_PAUSE_PLAYER        = 0x108;
 static const int AWPLAYER_MESSAGE_DEMUX_RESUME_PLAYER       = 0x109;
 static const int AWPLAYER_MESSAGE_DEMUX_DATA_PACKET         = 0x110;
+static const int AWPLAYER_MESSAGE_DEMUX_DOWNLOAD_COMPLETE   = 0x111;
 
 static const int AWPLAYER_MESSAGE_PLAYER_EOS                = 0x201;
 static const int AWPLAYER_MESSAGE_PLAYER_FIRST_PICTURE      = 0x202;
@@ -472,12 +473,19 @@ int AwPlayer::getDuration(int *msec)
     {
         pthread_mutex_lock(&mMutex);
         if(mMediaInfo != NULL){
-            logv("----getDuration %d", nDurationMs);
-            *msec = mMediaInfo->nDurationMs;
-        }
+			clearMediaInfo();
+			mMediaInfo = DemuxCompGetMediaInfo(mDemux);
+			if(mMediaInfo != NULL){
+				logd("mMediaInfo->nDurationMs = %d",mMediaInfo->nDurationMs);
+				*msec = mMediaInfo->nDurationMs;
+			}else{
+				loge("getDuration() fail222, mMediaInfo==NULL.");
+				*msec = 0;
+			}
+		}
         else
         {
-            loge("getCurrentPosition() fail, mMediaInfo==NULL.");
+            loge("getDuration() fail, mMediaInfo==NULL.");
             *msec = 0;
         }
         pthread_mutex_unlock(&mMutex);
@@ -1315,9 +1323,14 @@ int AwPlayer::callbackProcess(int messageId, void* param)
         case AWPLAYER_MESSAGE_DEMUX_EOS:
         {
             PlayerSetEos(mPlayer);
-			mNotifier(mUserData, NOTIFY_DOWNLOAD_END, 0, NULL);
             break;
         }
+		
+		case AWPLAYER_MESSAGE_DEMUX_DOWNLOAD_COMPLETE:
+		{
+			mNotifier(mUserData, NOTIFY_DOWNLOAD_COMPLETE, 0, NULL);
+			break;
+		}
 
         case AWPLAYER_MESSAGE_DEMUX_IOERROR:
         {
@@ -1601,6 +1614,9 @@ static int DemuxCallbackProcess(void* pUserData, int eMessageId, void* param)
             break;
         case DEMUX_NOTIFY_DATA_PACKET:
             msg = AWPLAYER_MESSAGE_DEMUX_DATA_PACKET;
+            break;
+		case DEMUX_NOTIFY_DOWNLOAD_COMPLETE:
+            msg = AWPLAYER_MESSAGE_DEMUX_DOWNLOAD_COMPLETE;
             break;
         default:
             logw("ignore demux callback message, eMessageId = 0x%x.", eMessageId);

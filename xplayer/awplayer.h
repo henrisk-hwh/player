@@ -46,7 +46,7 @@ using namespace std;
 #define NOTIFY_VIDEO_FRAME    12 //the video pic after decoding
 #define NOTIFY_AUDIO_FRAME    13 //the audio pcm data after decoding
 
-#define NOTIFY_DOWNLOAD_END   14
+#define NOTIFY_DOWNLOAD_COMPLETE   14
 
 #define NOTIFY_ERROR_TYPE_UNKNOWN   0x100   //* for param0 when notify a NOTIFY_ERROR message.
 #define NOTIFY_ERROR_TYPE_IO        0x101   //* for param0 when notify a NOTIFY_ERROR message.

@@ -27,7 +27,7 @@ enum TINA_NOTIFY_APP_TYPE
 	TINA_NOTIFY_AUDIO_PACKET        = 11, //the audiopacket data demux from parser
 	TINA_NOTIFY_VIDEO_FRAME         = 12, //the video pic after decoding
 	TINA_NOTIFY_AUDIO_FRAME         = 13, //the audio pcm data after decoding
-	TINA_NOTIFY_DOWNLOAD_END        = 14, //download end
+	TINA_NOTIFY_DOWNLOAD_COMPLETE        = 14, //download complete
 };
 
 enum EVIDEOPIXELFORMAT

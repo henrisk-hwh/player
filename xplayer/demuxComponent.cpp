@@ -382,6 +382,12 @@ MediaInfo* DemuxCompGetMediaInfo(DemuxComp* d)
 
     demux = (DemuxCompContext*)d;
 
+	CdxMediaInfoT parserMediaInfo;
+    memset(&parserMediaInfo, 0, sizeof(CdxMediaInfoT));
+    CdxParserGetMediaInfo(demux->pParser, &parserMediaInfo);
+    setMediaInfo(&demux->mediaInfo, &parserMediaInfo);
+    demux->mediaInfo.eContainerType = (enum ECONTAINER)demux->pParser->type;
+
     myMediaInfo = &demux->mediaInfo;
     mi = (MediaInfo*)malloc(sizeof(MediaInfo));
     if(mi == NULL)
@@ -1138,7 +1144,7 @@ process_message:
                         if(demux->bEOS)
                         {
                             //* end of stream, notify complete.
-                            logd("detect eos, notify EOS.");
+                            logv("detect eos, notify EOS.");
                             demux->callback(demux->pUserData, DEMUX_NOTIFY_EOS, 0);
                             demux->eStatus = DEMUX_STATUS_COMPLETE;
                             continue;
@@ -1348,7 +1354,6 @@ process_message:
                         }
                         else
                         {
-                            logd("detect eos, notify EOS.");
                             demux->bEOS = 1;
                             demux->callback(demux->pUserData, DEMUX_NOTIFY_EOS, 0);
                             demux->eStatus = DEMUX_STATUS_COMPLETE;
@@ -1481,7 +1486,6 @@ process_message:
                         }
                         else
                         {
-                            logd("detect eos, notify EOS.");
                             demux->bEOS = 1;
                             demux->callback(demux->pUserData, DEMUX_NOTIFY_EOS, 0);
                             demux->eStatus = DEMUX_STATUS_COMPLETE;
@@ -1614,10 +1618,10 @@ cache_process_message:
 
                         if(err == PSR_IO_ERR)
                             demux->bIOError = 1;
-                        else
+                        else{
                             demux->bEOS = 1;
-                            setMessage(&msg, DEMUX_COMMAND_READ);
-                            AwMessageQueuePostMessage(demux->mq, &msg);
+							demux->callback(demux->pUserData, DEMUX_NOTIFY_DOWNLOAD_COMPLETE, 0);
+						}
                     }
 
                     continue;

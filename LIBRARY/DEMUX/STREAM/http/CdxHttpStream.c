@@ -1034,7 +1034,7 @@ static int CdxReadChunkedData(CdxHttpStreamImplT *impl,void* buf, int len)
                         impl->tmpChunkedSize = 0;
                         needReadLen = ReadChunkedSize(impl->tcpStream, impl->tmpChunkedLen,
                             &impl->tmpChunkedSize);
-                        CDX_LOGD("xxxxxxx chunkSize=%d", needReadLen);
+                        CDX_LOGV("xxxxxxx chunkSize=%d", needReadLen);
                         if(needReadLen == 0)
                         {
 
@@ -1077,7 +1077,7 @@ static int CdxReadChunkedData(CdxHttpStreamImplT *impl,void* buf, int len)
 
                     }
                 }
-            }   
+            }
 
             impl->httpDataBufferPosChunked = 0;
             impl->restChunkSize = 0;
@@ -1124,7 +1124,6 @@ static int CdxReadChunkedData(CdxHttpStreamImplT *impl,void* buf, int len)
                 impl->httpDataSize += readLen;
             }
         }
-
     }
 
     return sum;

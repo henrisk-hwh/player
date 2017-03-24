@@ -330,10 +330,10 @@ namespace aw{
 
 	        }
 
-			case NOTIFY_DOWNLOAD_END:
+			case NOTIFY_DOWNLOAD_COMPLETE:
 			{
-				logd(" TINA_NOTIFY_DOWNLOAD_END:download data end");
-				app_msg = TINA_NOTIFY_DOWNLOAD_END;
+				logd(" TINA_NOTIFY_DOWNLOAD_COMPLETE:download data complete");
+				app_msg = TINA_NOTIFY_DOWNLOAD_COMPLETE;
 	            break;
 			}
 
