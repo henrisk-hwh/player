@@ -1,0 +1,144 @@
+diff --git a/allwinner/liballwinner/LIBRARY/DEMUX/BASE/CdxSocketUtil.c b/allwinner/liballwinner/LIBRARY/DEMUX/BASE/CdxSocketUtil.c
+index 3c1013b..8dc6b88 100755
+--- a/allwinner/liballwinner/LIBRARY/DEMUX/BASE/CdxSocketUtil.c
++++ b/allwinner/liballwinner/LIBRARY/DEMUX/BASE/CdxSocketUtil.c
+@@ -260,7 +260,7 @@ cdx_int32  CdxSockAsynConnect(cdx_int32 sockfd, const struct sockaddr *addr, soc
+         CDX_LOGE("<%s,%d>select err(%d)", __FUNCTION__, __LINE__, errno);
+         return -1;
+     }
+-
++	CDX_LOGD("llh>>>in CdxSockAsynConnect:loopTimes = %ld",loopTimes);
+     for (i = 0; i < loopTimes; i++)
+     {
+         if (pForceStop && *pForceStop)
+@@ -273,7 +273,9 @@ cdx_int32  CdxSockAsynConnect(cdx_int32 sockfd, const struct sockaddr *addr, soc
+         FD_SET(sockfd, &ws);
+         tv.tv_sec = 0;
+         tv.tv_usec = CDX_SELECT_TIMEOUT;
++		CDX_LOGD("llh>>>in CdxSockAsynConnect:select begin,i = %ld",i);
+         ret = select(sockfd + 1, NULL, &ws, NULL, &tv);
++		CDX_LOGD("llh>>>in CdxSockAsynConnect:select finish,i = %ld,ret = %d",i,ret);
+         if (ret > 0)
+         {
+             int nError = 0;
+@@ -331,7 +333,7 @@ cdx_ssize CdxSockAsynSend(cdx_int32 sockfd, const void *buf, cdx_size len,
+     {
+         loopTimes = timeoutUs/CDX_SELECT_TIMEOUT;
+     }
+-
++	CDX_LOGD("llh>>>in CdxSockAsynSend:loopTimes = %ld",loopTimes);
+     for (i = 0; i < loopTimes; i++)
+     {
+         if (pForceStop && *pForceStop)
+@@ -346,7 +348,9 @@ cdx_ssize CdxSockAsynSend(cdx_int32 sockfd, const void *buf, cdx_size len,
+         FD_SET(sockfd, &errs);
+         tv.tv_sec = 0;
+         tv.tv_usec = CDX_SELECT_TIMEOUT;
++		CDX_LOGD("llh>>>in CdxSockAsynSend:select begin,i = %ld",i);
+         ret = select(sockfd + 1, NULL, &ws, &errs, &tv);
++		CDX_LOGD("llh>>>in CdxSockAsynSend:select finish,i = %ld,ret = %ld",i,ret);
+         if (ret < 0)
+         {
+             ioErr = errno;
+@@ -445,7 +449,7 @@ cdx_ssize CdxSockAsynRecv(cdx_int32 sockfd, void *buf, cdx_size len,
+     {
+         loopTimes = timeoutUs/CDX_SELECT_TIMEOUT;
+     }
+-
++	CDX_LOGD("llh>>>in CdxSockAsynRecv:loopTimes = %ld",loopTimes);
+     for (i = 0; i < loopTimes; i++)
+     {
+         if (pForceStop && *pForceStop)
+@@ -460,7 +464,9 @@ cdx_ssize CdxSockAsynRecv(cdx_int32 sockfd, void *buf, cdx_size len,
+         FD_SET(sockfd, &errs);
+         tv.tv_sec = 0;
+         tv.tv_usec = CDX_SELECT_TIMEOUT;
++		CDX_LOGD("llh>>>in CdxSockAsynRecv:select begin,i = %ld",i);
+         ret = select(sockfd + 1, &rs, NULL, &errs, &tv);
++		CDX_LOGD("llh>>>in CdxSockAsynRecv:select finish,i = %ld,ret = %ld",i,ret);
+         if (ret < 0)
+         {
+             ioErr = errno;
+diff --git a/allwinner/liballwinner/LIBRARY/DEMUX/STREAM/ssl/CdxSSLStream.c b/allwinner/liballwinner/LIBRARY/DEMUX/STREAM/ssl/CdxSSLStream.c
+index 032ebd8..71a2c9d 100755
+--- a/allwinner/liballwinner/LIBRARY/DEMUX/STREAM/ssl/CdxSSLStream.c
++++ b/allwinner/liballwinner/LIBRARY/DEMUX/STREAM/ssl/CdxSSLStream.c
+@@ -77,8 +77,9 @@ cdx_int32  CdxSSLConnect(cdx_int32 sockfd, SSL *ssl,
+                 CDX_LOGE("<%s,%d>force stop.", __FUNCTION__, __LINE__);
+                 return -2;
+             }
+-
++			CDX_LOGD("llh>>>in CdxSSLConnect:SSL_connect begin");
+             ret = SSL_connect(ssl);
++			CDX_LOGD("llh>>>in CdxSSLConnect:SSL_connect finish,ret = %d",ret);
+             if (ret > 0)
+             {
+                 //success
+@@ -118,7 +119,7 @@ cdx_int32  CdxSSLConnect(cdx_int32 sockfd, SSL *ssl,
+     {
+         loopTimes = timeoutUs/CDX_SELECT_TIMEOUT;
+     }
+-
++	CDX_LOGD("llh>>>in CdxSSLConnect:loopTimes = %ld",loopTimes);
+     while(1)
+     {
+         ret = SSL_connect(ssl);
+@@ -151,7 +152,9 @@ cdx_int32  CdxSSLConnect(cdx_int32 sockfd, SSL *ssl,
+                     FD_SET(sockfd, &ws);
+                     tv.tv_sec = 0;
+                     tv.tv_usec = CDX_SELECT_TIMEOUT;
++					CDX_LOGD("llh>>>in CdxSSLConnect:select begin,i = %ld",i);
+                     ret = select(sockfd + 1, NULL, &ws, NULL, &tv);
++					CDX_LOGD("llh>>>in CdxSSLConnect:select finish,i = %ld,ret = %d",i,ret);
+                     if (ret > 0)
+                     {
+                         break;//return 0;
+@@ -247,7 +250,7 @@ cdx_ssize CdxSSLRecv(cdx_int32 sockfd, SSL *ssl, void *buf, cdx_size len,
+     {
+         loopTimes = timeoutUs/CDX_SELECT_TIMEOUT;
+     }
+-
++	CDX_LOGD("llh>>>in CdxSSLRecv:loopTimes = %ld",loopTimes);
+     for (i = 0; i < loopTimes; i++)
+     {
+         if (pForceStop && *pForceStop)
+@@ -262,7 +265,9 @@ cdx_ssize CdxSSLRecv(cdx_int32 sockfd, SSL *ssl, void *buf, cdx_size len,
+         FD_SET(sockfd, &errs);
+         tv.tv_sec = 0;
+         tv.tv_usec = CDX_SELECT_TIMEOUT;
++		CDX_LOGD("llh>>>in CdxSSLRecv:select begin,i = %ld",i);
+         ret = select(sockfd + 1, &rs, NULL, &errs, &tv);
++		CDX_LOGD("llh>>>in CdxSSLRecv:select finish,i = %ld,ret = %ld",i,ret);
+         if (ret < 0)
+         {
+             ioErr = errno;
+@@ -395,7 +400,7 @@ cdx_ssize CdxSSLSend(cdx_int32 sockfd, SSL *ssl, const void *buf, cdx_size len,
+     {
+         loopTimes = timeoutUs/CDX_SELECT_TIMEOUT;
+     }
+-
++	CDX_LOGD("llh>>>in CdxSSLSend:loopTimes = %ld",loopTimes);
+     for (i = 0; i < loopTimes; i++)
+     {
+         if (pForceStop && *pForceStop)
+@@ -408,7 +413,9 @@ cdx_ssize CdxSSLSend(cdx_int32 sockfd, SSL *ssl, const void *buf, cdx_size len,
+         FD_SET(sockfd, &ws);
+         tv.tv_sec = 0;
+         tv.tv_usec = CDX_SELECT_TIMEOUT;
++		CDX_LOGD("llh>>>in CdxSSLSend:select begin,i = %ld",i);
+         ret = select(sockfd + 1, NULL, &ws, NULL, &tv);
++		CDX_LOGD("llh>>>in CdxSSLSend:select finish,i = %ld,ret = %ld",i,ret);
+         if (ret < 0)
+         {
+             ioErr = errno;
+@@ -871,8 +878,9 @@ static void *StartSSLStreamThread(void *pArg)
+         goto err_out;
+     }
+     CdxSockSetBlocking(impl->sockFd, 1);// set socket to blocking
+-
++	CDX_LOGD("llh>>>CdxSSLConnect begin");
+     ret = CdxSSLConnect(impl->sockFd,impl->ssl, 0, &impl->forceStopFlag);
++	CDX_LOGD("llh>>>CdxSSLConnect finish");
+     if(ret < 0)
+     {
+         CDX_LOGE("ssl connect failed.");

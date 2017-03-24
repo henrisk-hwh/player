@@ -1,0 +1,53 @@
+diff --git a/allwinner/liballwinner/LIBRARY/DEMUX/STREAM/http/CdxHttpStream.c b/allwinner/liballwinner/LIBRARY/DEMUX/STREAM/http/CdxHttpStream.c
+index a140d6d..b56967a 100755
+--- a/allwinner/liballwinner/LIBRARY/DEMUX/STREAM/http/CdxHttpStream.c
++++ b/allwinner/liballwinner/LIBRARY/DEMUX/STREAM/http/CdxHttpStream.c
+@@ -14,6 +14,8 @@
+ #include <unistd.h>
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <string.h>
++#include <errno.h>
+ #include <CdxStream.h>
+ #include <CdxHttpStream.h>
+ #include <CdxMemory.h>
+@@ -21,7 +23,7 @@
+ #include <sys/time.h>
+ #include <stdint.h>
+ 
+-#define PROBE_DATA_LEN_DEFAULT (128*1024)
++#define PROBE_DATA_LEN_DEFAULT (5*1024*1024)
+ #define MAX_STREAM_BUF_SIZE (10*1024*1024)
+ #define PROTECT_AREA_SIZE (512*1024)  //should not too big
+ #define TEMP_HTTP_DATA_BUF (PROBE_DATA_LEN_DEFAULT + 4096)
+@@ -2194,6 +2196,30 @@ static int CdxGetProbeData(CdxHttpStreamImplT *impl)
+ 	CDX_LOGD("llh>>>CdxGetProbeData finish,impl->validDataSize = %lld",impl->validDataSize);
+ 
+     memcpy(impl->probeData.buf, impl->buffer, impl->probeData.len);
++	
++	int write_ret = 0;
++	FILE* testfd = NULL;
++	testfd = fopen("/tmp/save_some_data.aac", "wb");
++	if(testfd == NULL){
++		CDX_LOGE("fopen /tmp/save_some_data.aac fail****");
++		CDX_LOGE("err str: %s",strerror(errno));
++	}else{
++		fseek(testfd,0,SEEK_SET);
++	}
++	while(write_ret < impl->probeData.len){
++		int tmp_ret = 0;
++		tmp_ret = fwrite(impl->probeData.buf, 1, 4096, testfd);
++		if(tmp_ret <= 0){
++			CDX_LOGE("write /tmp/save_some_data.aac error,err str: %s",strerror(errno));
++			continue;
++		}
++		write_ret += tmp_ret;
++	}
++	CDX_LOGD("write_ret = 0x%x,impl->probeData.len = 0x%x",write_ret,impl->probeData.len);
++	if(testfd !=NULL ){
++		fclose(testfd);
++		testfd = NULL;
++	}
+     return 0;
+ 
+ err_out:
