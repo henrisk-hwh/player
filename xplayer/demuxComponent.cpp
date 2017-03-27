@@ -1681,8 +1681,10 @@ cache_process_message:
 
                         if(err == PSR_IO_ERR)
                             demux->bIOError = 1;
-                        else
+                        else{
                             demux->bEOS = 1;
+							demux->callback(demux->pUserData, DEMUX_NOTIFY_DOWNLOAD_COMPLETE, 0);
+						}
                     }
                 }
                 continue;

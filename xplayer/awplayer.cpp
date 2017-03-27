@@ -91,6 +91,7 @@ AwPlayer::AwPlayer()
     mVolume            = 0;
 
     pthread_mutex_init(&mMutex, NULL);
+	pthread_mutex_init(&mInfoMutex, NULL);
     sem_init(&mSemSetDataSource, 0, 0);
     sem_init(&mSemPrepare, 0, 0);
     sem_init(&mSemStart, 0, 0);
@@ -154,6 +155,7 @@ AwPlayer::~AwPlayer()
         AwMessageQueueDestroy(mMessageQueue);
 
     pthread_mutex_destroy(&mMutex);
+	pthread_mutex_destroy(&mInfoMutex);
     sem_destroy(&mSemSetDataSource);
     sem_destroy(&mSemPrepare);
     sem_destroy(&mSemStart);
@@ -463,7 +465,7 @@ int AwPlayer::getCurrentPosition(int* msec)
 
 int AwPlayer::getDuration(int *msec)
 {
-    logv("getDuration");
+    logd("getDuration,mStatus = %d",mStatus);
 
     if(mStatus == AWPLAYER_STATUS_PREPARED ||
        mStatus == AWPLAYER_STATUS_STARTED  ||
@@ -473,14 +475,23 @@ int AwPlayer::getDuration(int *msec)
     {
         pthread_mutex_lock(&mMutex);
         if(mMediaInfo != NULL){
-			clearMediaInfo();
-			mMediaInfo = DemuxCompGetMediaInfo(mDemux);
-			if(mMediaInfo != NULL){
-				logd("mMediaInfo->nDurationMs = %d",mMediaInfo->nDurationMs);
-				*msec = mMediaInfo->nDurationMs;
+			if(mMediaInfo->nDurationMs == -1){
+				pthread_mutex_lock(&mInfoMutex);
+				logd("clearMediaInfo begin");
+				clearMediaInfo();
+				logd("clearMediaInfo finish");
+				pthread_mutex_unlock(&mInfoMutex);
+				mMediaInfo = DemuxCompGetMediaInfo(mDemux);
+				logd("DemuxCompGetMediaInfo finish");
+				if(mMediaInfo != NULL){
+					logd("mMediaInfo->nDurationMs = %d",mMediaInfo->nDurationMs);
+					*msec = mMediaInfo->nDurationMs;
+				}else{
+					loge("getDuration() fail222, mMediaInfo==NULL.");
+					*msec = 0;
+				}
 			}else{
-				loge("getDuration() fail222, mMediaInfo==NULL.");
-				*msec = 0;
+				*msec = mMediaInfo->nDurationMs;
 			}
 		}
         else
@@ -649,7 +660,7 @@ void AwPlayer::clearMediaInfo()
     VideoStreamInfo*    v;
     AudioStreamInfo*    a;
     SubtitleStreamInfo* s;
-
+	logd("in clearMediaInfo,mMediaInfo = %p",mMediaInfo);
     if(mMediaInfo != NULL)
     {
         //* free video stream info.
@@ -790,7 +801,7 @@ int AwPlayer::mainThread()
         } //* end AWPLAYER_COMMAND_SET_SOURCE.
         else if(msg.messageId == AWPLAYER_COMMAND_PREPARE)
         {
-            logv("process message AWPLAYER_COMMAND_PREPARE.");
+            logd("process message AWPLAYER_COMMAND_PREPARE.");
 
             if(mStatus != AWPLAYER_STATUS_INITIALIZED && mStatus != AWPLAYER_STATUS_STOPPED)
             {
@@ -1141,8 +1152,11 @@ int AwPlayer::mainThread()
             }
 
             //* clear media info.
+            pthread_mutex_lock(&mInfoMutex);
+            logd("in mainThread:clearMediaInfo begin");
             clearMediaInfo();
-
+			logd("in mainThread:clearMediaInfo finish");
+			pthread_mutex_unlock(&mInfoMutex);
             //* clear loop setting.
             mLoop   = 0;
 

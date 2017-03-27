@@ -178,6 +178,7 @@ private:
     //* for status and synchronize control.
     int                 mStatus;
     pthread_mutex_t     mMutex;
+	pthread_mutex_t     mInfoMutex;//for lock media info
     sem_t               mSemSetDataSource;
     sem_t               mSemPrepare;
     sem_t               mSemStart;
